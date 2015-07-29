@@ -151,33 +151,32 @@ Inherit.prototype.matchQueryRule = function (val, query) {
 
 Inherit.prototype.copyMediaRules = function(val, selectors) {
 
-  this.rules.forEach(function (rule) {
+  this.rules.forEach(function (query) {
 
     // only select media queried
-    if (!rule.selectors) {
+    if (query.type !== 'media') return;
 
-      var query = rule;
+    // look into the queries' rules
+    query.rules.forEach(function (rule) {
 
-      // look into the queries' rules
-      query.rules.forEach(function (rule) {
+      if (rule.type !== 'rule') return;
 
-        var matchedSelectors = rule.selectors.filter(function (selector) {
-          return selector.match(replaceRegExp(val))
-        })
-
-        // matchedSelectors are the ones found in this media query that
-        // are being inherited
-
-        if (!matchedSelectors.length) return;
-
-        query.rules.push({
-          selectors: selectors,
-          type: 'rule',
-          declarations: rule.declarations,
-          parent: query
-        });
+      var matchedSelectors = rule.selectors.filter(function (selector) {
+        return selector.match(replaceRegExp(val))
       })
-    }
+
+      // matchedSelectors are the ones found in this media query that
+      // are being inherited
+
+      if (!matchedSelectors.length) return;
+
+      query.rules.push({
+        selectors: selectors,
+        type: 'rule',
+        declarations: rule.declarations,
+        parent: query
+      });
+    })
   });
 };
 
@@ -226,7 +225,10 @@ Inherit.prototype.removePlaceholders = function (query) {
   for (var i = 0; i < rules.length; i++) {
     var selectors = rules[i].selectors
     if (!selectors) {
-      this.removePlaceholders(rules[i]);
+      if (rules[i].type === 'media') {
+        this.removePlaceholders(rules[i]);
+      }
+
       return;
     };
 
