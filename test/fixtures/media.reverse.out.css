@@ -1,0 +1,9 @@
+.button {
+  color: red;
+}
+
+@media (min-width: 320px) {
+  .button {
+    color: blue;
+  }
+}

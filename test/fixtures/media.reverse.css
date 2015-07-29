@@ -1,0 +1,13 @@
+%a {
+  color: red;
+}
+
+@media (min-width: 320px) {
+  %a {
+    color: blue;
+  }
+}
+
+.button {
+  inherit: %a;
+}

@@ -15,6 +15,7 @@ function test(file, msg) {
   assert.equal(out, expected, msg)
 }
 
+test('media.reverse', 'Inherit from revese media query failed')
 test('attribute', 'Attribute selector failed')
 test('clearfix', 'Clearfix failed')
 test('clearfix.zoom', 'Clearfix with zoom failed')

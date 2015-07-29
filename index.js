@@ -33,7 +33,7 @@ function Inherit(style, options) {
     }
   }
 
-  this.removePlaceholders()
+  this.removePlaceholders();
 }
 
 Inherit.prototype.inheritMedia = function (mediaRule) {
@@ -103,7 +103,11 @@ Inherit.prototype.inheritRules = function (rule) {
     if (decl.type !== 'declaration') continue;
     if (!this.propertyRegExp.test(decl.property)) continue;
 
+    // at this point, we've found an inherit: declaration
+
     decl.value.split(',').map(trim).forEach(function (val) {
+
+      // for each of those, let's inherit!
       this.inheritRule(val, selectors)
     }, this)
 
@@ -112,7 +116,11 @@ Inherit.prototype.inheritRules = function (rule) {
 }
 
 Inherit.prototype.inheritRule = function (val, selectors) {
-  var matchedRules = this.matches[val] || this.matchRules(val)
+
+  // inheriting val, and giving it to selectors
+
+  var matchedRules = this.matches[val] || this.matchRules(val);
+  var newMediaRules = this.copyMediaRules(val, selectors);
 
   if (!matchedRules.rules.length)
     throw new Error('Failed to extend from ' + val + '.');
@@ -140,6 +148,38 @@ Inherit.prototype.matchQueryRule = function (val, query) {
     })
   }
 }
+
+Inherit.prototype.copyMediaRules = function(val, selectors) {
+
+  this.rules.forEach(function (rule) {
+
+    // only select media queried
+    if (!rule.selectors) {
+
+      var query = rule;
+
+      // look into the queries' rules
+      query.rules.forEach(function (rule) {
+
+        var matchedSelectors = rule.selectors.filter(function (selector) {
+          return selector.match(replaceRegExp(val))
+        })
+
+        // matchedSelectors are the ones found in this media query that
+        // are being inherited
+
+        if (!matchedSelectors.length) return;
+
+        query.rules.push({
+          selectors: selectors,
+          type: 'rule',
+          declarations: rule.declarations,
+          parent: query
+        });
+      })
+    }
+  });
+};
 
 Inherit.prototype.matchRules = function (val) {
   var matchedRules = this.matches[val] = {
@@ -180,12 +220,15 @@ Inherit.prototype.appendSelectors = function (matchedRules, val, selectors) {
 }
 
 // Placeholders are not allowed in media queries
-Inherit.prototype.removePlaceholders = function () {
-  var rules = this.rules
+Inherit.prototype.removePlaceholders = function (query) {
+  var rules = query ? query.rules : this.rules;
 
   for (var i = 0; i < rules.length; i++) {
     var selectors = rules[i].selectors
-    if (!selectors) continue;
+    if (!selectors) {
+      this.removePlaceholders(rules[i]);
+      return;
+    };
 
     for (var j = 0; j < selectors.length; j++) {
       var selector = selectors[j]
